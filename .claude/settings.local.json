@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "mcp__figma__get_design_context",
+      "Bash(npx tsc:*)",
+      "Bash(cd:*)",
+      "Bash(\"C:/Users/12991/Desktop/AIagent/frontend/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/12991/Desktop/AIagent/frontend/tsconfig.json\")",
+      "Bash(python -m uvicorn:*)",
+      "Bash(npm run dev)",
+      "Bash(curl:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(npm install:*)",
+      "Bash(\"C:/Users/12991/Desktop/AIagent/frontend/node_modules/.bin/tsc\" --noEmit --project \"C:/Users/12991/Desktop/AIagent/frontend/tsconfig.app.json\")",
+      "Bash(taskkill:*)",
+      "Bash(taskkill /F /IM \"python.exe\" /FI \"WINDOWTITLE eq *uvicorn*\")",
+      "Bash(npx vite:*)",
+      "Bash(pip install:*)",
+      "Bash(pushd:*)",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(celery -A tasks.celery_app worker --loglevel=info --pool=solo)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:help.aliyun.com)",
+      "Bash(powershell:*)",
+      "Bash(test:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
