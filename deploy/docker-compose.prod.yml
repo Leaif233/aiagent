@@ -1,0 +1,88 @@
+services:
+  backend:
+    build: ./backend
+    container_name: aiagent-backend
+    restart: always
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-chroma:/app/chroma_data
+      - backend-db:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  celery-worker:
+    build: ./backend
+    container_name: aiagent-celery
+    restart: always
+    command: celery -A tasks.celery_app worker --loglevel=info
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-chroma:/app/chroma_data
+      - backend-db:/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  frontend:
+    build: ./frontend
+    container_name: aiagent-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+
+  redis:
+    image: redis:7-alpine
+    container_name: aiagent-redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+
+volumes:
+  backend-uploads:
+  backend-chroma:
+  backend-db:
+  redis-data:
