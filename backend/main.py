@@ -21,7 +21,6 @@ from api.settings import router as settings_router
 from api.feedback import router as feedback_router
 from api.versions import router as versions_router
 from api.sessions import router as sessions_router
-from api.auth import router as auth_router
 
 app = FastAPI(title="AI Technical Support System", version="1.0.0")
 
@@ -82,7 +81,6 @@ app.include_router(settings_router)
 app.include_router(feedback_router)
 app.include_router(versions_router)
 app.include_router(sessions_router)
-app.include_router(auth_router)
 
 # Static files for uploaded images
 app.mount("/uploads", StaticFiles(directory=config.UPLOAD_DIR), name="uploads")
