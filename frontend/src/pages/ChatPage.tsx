@@ -6,6 +6,14 @@ import RightSidebar from '../components/chat/right-sidebar'
 import { getSessionMessages, chatRetrieve } from '../lib/api'
 import { useI18n } from '../lib/i18n'
 
+const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
 export interface SourceRef {
   type: string
   id: string
@@ -78,7 +86,7 @@ export default function ChatPage() {
   const { t } = useI18n()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [sources, setSources] = useState<SourceRef[]>([])
-  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID())
+  const [sessionId, setSessionId] = useState<string>(() => generateUUID())
   const [selectedContent, setSelectedContent] = useState<ContentResult[] | null>(null)
   const [sidebarLoading, setSidebarLoading] = useState(false)
   const [matchedSections, setMatchedSections] = useState<string[]>([])
@@ -96,7 +104,7 @@ export default function ChatPage() {
   }
 
   const handleNewChat = useCallback(() => {
-    setSessionId(crypto.randomUUID())
+    setSessionId(generateUUID())
     setMessages([])
     setSources([])
     setNearMissSources([])

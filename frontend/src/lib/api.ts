@@ -1,6 +1,6 @@
 import { getToken, removeToken } from './auth'
 
-const BASE = '/api'
+const BASE = window.location.hostname === 'localhost' ? '/api' : 'http://38.22.235.27:8001/api'
 
 export class ApiError extends Error {
   status: number

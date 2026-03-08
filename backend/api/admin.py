@@ -2,13 +2,12 @@ from fastapi import APIRouter, Depends
 
 from db.sqlite_db import get_connection
 from db.settings_store import get_setting_float
-from core.auth import require_admin, CurrentUser
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 @router.get("/stats")
-async def get_stats(user: CurrentUser = Depends(require_admin)):
+async def get_stats():
     """Dashboard stats: pending counts, verified, distribution, sessions, feedback, cost."""
     conn = get_connection()
     try:
@@ -86,7 +85,7 @@ async def get_stats(user: CurrentUser = Depends(require_admin)):
 
 
 @router.get("/pending")
-async def get_pending_items(user: CurrentUser = Depends(require_admin)):
+async def get_pending_items():
     """Combined list of all pending review items (docs + tickets)."""
     conn = get_connection()
     try:
@@ -108,7 +107,7 @@ async def get_pending_items(user: CurrentUser = Depends(require_admin)):
 
 
 @router.get("/trends")
-async def get_trends(days: int = 30, user: CurrentUser = Depends(require_admin)):
+async def get_trends(days: int = 30):
     """Time-series data: new docs, tickets, sessions per day."""
     conn = get_connection()
     try:
@@ -156,7 +155,7 @@ async def get_trends(days: int = 30, user: CurrentUser = Depends(require_admin))
 
 
 @router.get("/hot-topics")
-async def get_hot_topics(limit: int = 10, user: CurrentUser = Depends(require_admin)):
+async def get_hot_topics(limit: int = 10):
     """Frequently asked questions from chat messages."""
     conn = get_connection()
     try:
@@ -174,7 +173,7 @@ async def get_hot_topics(limit: int = 10, user: CurrentUser = Depends(require_ad
 
 
 @router.get("/no-result-queries")
-async def get_no_result_queries(limit: int = 20, user: CurrentUser = Depends(require_admin)):
+async def get_no_result_queries(limit: int = 20):
     """Top no-result search terms ranked by frequency."""
     conn = get_connection()
     try:

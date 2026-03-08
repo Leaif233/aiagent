@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from db.settings_store import get_all_settings, set_many_settings, get_setting
 from db.chroma_client import get_docs_collection, get_tickets_collection
-from core.auth import get_current_user, require_admin, CurrentUser
 from models.schemas import SettingsUpdateRequest
 import config
 
@@ -23,13 +22,13 @@ def _mask_keys(data: dict) -> dict:
 
 
 @router.get("")
-async def read_settings(user: CurrentUser = Depends(require_admin)):
+async def read_settings():
     """Return all settings merged with defaults, API keys masked."""
     return _mask_keys(get_all_settings())
 
 
 @router.patch("")
-async def update_settings(body: SettingsUpdateRequest, user: CurrentUser = Depends(require_admin)):
+async def update_settings(body: SettingsUpdateRequest):
     """Bulk update settings. Skip masked API key values."""
     data = body.model_dump()
     if not data:
@@ -59,7 +58,7 @@ async def update_settings(body: SettingsUpdateRequest, user: CurrentUser = Depen
 
 
 @router.get("/status")
-async def system_status(user: CurrentUser = Depends(require_admin)):
+async def system_status():
     """Return system health: Redis, ChromaDB, storage."""
     status = {
         "redis": "unknown",
@@ -89,7 +88,7 @@ async def system_status(user: CurrentUser = Depends(require_admin)):
 
 
 @router.get("/llm-status")
-async def llm_status(user: CurrentUser = Depends(get_current_user)):
+async def llm_status():
     """Return LLM provider info, available providers, and per-task routing."""
     import os
     from core.task_types import TaskType, get_available_providers
@@ -122,8 +121,7 @@ async def llm_status(user: CurrentUser = Depends(get_current_user)):
 @router.get("/llm-usage")
 async def llm_usage(
     days: int = 30,
-    task_type: str = None,
-    user: CurrentUser = Depends(require_admin),
+    task_type: str = None
 ):
     """Return aggregated LLM token usage statistics."""
     from db.usage_store import query_usage_stats

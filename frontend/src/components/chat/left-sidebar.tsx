@@ -5,11 +5,8 @@ import {
   FileText,
   Ticket,
   Settings,
-  LogOut,
-  User,
 } from 'lucide-react'
 import { useI18n } from '../../lib/i18n'
-import { getUsername, isAdmin, removeToken } from '../../lib/auth'
 
 export default function LeftSidebar() {
   const navigate = useNavigate()
@@ -60,26 +57,6 @@ export default function LeftSidebar() {
           )
         })}
       </nav>
-
-      {/* User Info + Logout */}
-      <div className="p-4 border-t border-[var(--slate-200)]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[var(--slate-200)] flex items-center justify-center">
-            <User size={16} className="text-[var(--slate-500)]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[var(--slate-700)] truncate">{getUsername()}</p>
-            <p className="text-xs text-[var(--slate-400)]">{isAdmin() ? 'Admin' : 'User'}</p>
-          </div>
-          <button
-            onClick={() => { removeToken(); navigate('/login') }}
-            className="p-1.5 rounded-lg text-[var(--slate-400)] hover:text-[var(--error-red)] hover:bg-[var(--slate-100)] transition-colors"
-            title={t('auth.logout')}
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
-      </div>
     </aside>
   )
 }

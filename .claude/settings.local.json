@@ -28,7 +28,16 @@
       "Bash(powershell:*)",
       "Bash(test:*)",
       "Bash(redis-cli ping:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ssh:*)",
+      "Bash(tar czf:*)",
+      "Bash(git:*)",
+      "Bash(scp:*)",
+      "Bash(do sed:*)",
+      "Bash(sed:*)",
+      "Bash(do scp:*)",
+      "Bash(grep:*)"
     ]
   }
 }

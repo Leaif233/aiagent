@@ -1,13 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 
 from tasks.celery_app import celery_app
-from core.auth import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
 @router.get("/{task_id}")
-async def get_task_status(task_id: str, user: CurrentUser = Depends(get_current_user)):
+async def get_task_status(task_id: str):
     """Check async task status by Celery task ID."""
     result = celery_app.AsyncResult(task_id)
 

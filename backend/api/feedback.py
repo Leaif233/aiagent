@@ -4,14 +4,13 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 
 from db.sqlite_db import get_connection
-from core.auth import get_current_user, require_admin, CurrentUser
 from models.schemas import FeedbackRequest, FeedbackTicketRequest
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
 
 @router.post("")
-async def submit_feedback(body: FeedbackRequest, user: CurrentUser = Depends(get_current_user)):
+async def submit_feedback(body: FeedbackRequest):
     """Submit thumbs up/down on a chat message."""
     if body.rating not in (1, -1):
         raise HTTPException(status_code=400, detail="Rating must be 1 or -1")
@@ -29,7 +28,7 @@ async def submit_feedback(body: FeedbackRequest, user: CurrentUser = Depends(get
 
 
 @router.post("/ticket")
-async def create_feedback_ticket(body: FeedbackTicketRequest, user: CurrentUser = Depends(get_current_user)):
+async def create_feedback_ticket(body: FeedbackTicketRequest):
     """Create a correction ticket from a chat conversation."""
     conn = get_connection()
     try:
@@ -47,7 +46,7 @@ async def create_feedback_ticket(body: FeedbackTicketRequest, user: CurrentUser 
 
 
 @router.get("/stats")
-async def feedback_stats(user: CurrentUser = Depends(get_current_user)):
+async def feedback_stats():
     """Feedback summary counts for admin dashboard."""
     conn = get_connection()
     try:
@@ -74,7 +73,7 @@ async def feedback_stats(user: CurrentUser = Depends(get_current_user)):
 
 
 @router.get("/tickets")
-async def list_feedback_tickets(status: str = None, user: CurrentUser = Depends(get_current_user)):
+async def list_feedback_tickets(status: str = None):
     """List feedback tickets with optional status filter."""
     conn = get_connection()
     try:
@@ -93,7 +92,7 @@ async def list_feedback_tickets(status: str = None, user: CurrentUser = Depends(
 
 
 @router.patch("/tickets/{ticket_id}")
-async def resolve_feedback_ticket(ticket_id: str, user: CurrentUser = Depends(require_admin)):
+async def resolve_feedback_ticket(ticket_id: str):
     """Mark a feedback ticket as resolved."""
     conn = get_connection()
     try:

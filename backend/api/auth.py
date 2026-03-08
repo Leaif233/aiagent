@@ -42,7 +42,7 @@ async def login(request: Request, body: LoginRequest):
 
 
 @router.post("/register")
-async def register(body: RegisterRequest, admin: CurrentUser = Depends(require_admin)):
+async def register(body: RegisterRequest):
     if not body.username or not body.password:
         raise HTTPException(status_code=400, detail="Username and password required")
     if body.role not in ("admin", "user"):
