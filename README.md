@@ -459,3 +459,5 @@ python ../scripts/rebuild_index.py
 ### Q: Redis 状态显示"未连接"？
 
 Redis 仅用于 Celery 异步任务（文档解析、工单清洗）。核心功能（登录、聊天、文档管理）不依赖 Redis，可以忽略。如需异步清洗功能，请安装并启动 Redis。
+#   a i a g e n t  
+ 
