@@ -4,14 +4,13 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from db.sqlite_db import get_connection
 from db.versioning import create_version_snapshot, log_audit
-from core.auth import get_current_user, require_admin, CurrentUser
 from models.schemas import RollbackRequest
 
 router = APIRouter(prefix="/api", tags=["versions"])
 
 
 @router.get("/versions/{entity_type}/{entity_id}")
-async def get_version_history(entity_type: str, entity_id: str, user: CurrentUser = Depends(get_current_user)):
+async def get_version_history(entity_type: str, entity_id: str):
     """Get version history list (metadata only, no full snapshots)."""
     conn = get_connection()
     try:
@@ -27,7 +26,7 @@ async def get_version_history(entity_type: str, entity_id: str, user: CurrentUse
 
 
 @router.get("/versions/{entity_type}/{entity_id}/{version_id}")
-async def get_version_snapshot(entity_type: str, entity_id: str, version_id: str, user: CurrentUser = Depends(get_current_user)):
+async def get_version_snapshot(entity_type: str, entity_id: str, version_id: str):
     """Get a specific version's full snapshot."""
     conn = get_connection()
     try:
@@ -45,7 +44,7 @@ async def get_version_snapshot(entity_type: str, entity_id: str, version_id: str
 
 
 @router.post("/versions/{entity_type}/{entity_id}/rollback")
-async def rollback_version(entity_type: str, entity_id: str, body: RollbackRequest, user: CurrentUser = Depends(require_admin)):
+async def rollback_version(entity_type: str, entity_id: str, body: RollbackRequest):
     """Rollback an entity to a previous version."""
     version_id = body.version_id
 
@@ -62,7 +61,7 @@ async def rollback_version(entity_type: str, entity_id: str, body: RollbackReque
         conn.close()
 
     # Snapshot current state before rollback
-    create_version_snapshot(entity_type, entity_id, user.username, "rollback")
+    create_version_snapshot(entity_type, entity_id, "system", "rollback")
 
     # Apply snapshot to entity
     table = "documents" if entity_type == "document" else "tickets"
@@ -90,12 +89,12 @@ async def rollback_version(entity_type: str, entity_id: str, body: RollbackReque
     finally:
         conn.close()
 
-    log_audit(entity_type, entity_id, "rollback", user.username, f"rolled back to version {version_id}")
+    log_audit(entity_type, entity_id, "rollback", "system", f"rolled back to version {version_id}")
     return {"status": "rolled_back"}
 
 
 @router.get("/audit-log")
-async def get_audit_log(entity_type: str = None, entity_id: str = None, limit: int = 50, user: CurrentUser = Depends(require_admin)):
+async def get_audit_log(entity_type: str = None, entity_id: str = None, limit: int = 50):
     """Query audit log with optional filters."""
     conn = get_connection()
     try:

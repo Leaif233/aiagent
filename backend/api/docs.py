@@ -6,7 +6,6 @@ from datetime import datetime
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 
 import config
-from core.auth import get_current_user, require_admin, CurrentUser
 from db.sqlite_db import get_connection
 from db.chroma_client import get_docs_collection
 from db.versioning import create_version_snapshot, log_audit
@@ -18,7 +17,7 @@ router = APIRouter(prefix="/api/docs", tags=["documents"])
 
 
 @router.post("/upload")
-async def upload_documents(files: list[UploadFile] = File(...), user: CurrentUser = Depends(require_admin)):
+async def upload_documents(files: list[UploadFile] = File(...)):
     """Batch upload PDF/PPT/Docx files and trigger async parsing."""
     results = []
     conn = get_connection()
@@ -59,7 +58,7 @@ async def upload_documents(files: list[UploadFile] = File(...), user: CurrentUse
 
 
 @router.get("")
-async def list_documents(status: str = None, search: str = None, page: int = 1, page_size: int = 20, user: CurrentUser = Depends(get_current_user)):
+async def list_documents(status: str = None, search: str = None, page: int = 1, page_size: int = 20):
     """List documents with optional status filter, search, and pagination."""
     conn = get_connection()
     try:
@@ -92,7 +91,7 @@ async def list_documents(status: str = None, search: str = None, page: int = 1, 
 
 
 @router.post("/batch")
-async def batch_documents(body: BatchRequest, user: CurrentUser = Depends(require_admin)):
+async def batch_documents(body: BatchRequest):
     """Batch approve/reject/delete documents."""
     if body.action not in ("approve", "reject", "delete") or not body.ids:
         raise HTTPException(status_code=400, detail="Invalid action or empty ids")
@@ -102,11 +101,11 @@ async def batch_documents(body: BatchRequest, user: CurrentUser = Depends(requir
     for doc_id in body.ids:
         try:
             if body.action == "approve":
-                await approve_document(doc_id, user)
+                await approve_document(doc_id)
             elif body.action == "reject":
-                await reject_document(doc_id, user)
+                await reject_document(doc_id)
             elif body.action == "delete":
-                await delete_document(doc_id, user)
+                await delete_document(doc_id)
             success += 1
         except Exception:
             failed += 1
@@ -115,7 +114,7 @@ async def batch_documents(body: BatchRequest, user: CurrentUser = Depends(requir
 
 
 @router.get("/{doc_id}")
-async def get_document(doc_id: str, user: CurrentUser = Depends(get_current_user)):
+async def get_document(doc_id: str):
     """Get single document detail including raw and cleaned content."""
     conn = get_connection()
     try:
@@ -130,10 +129,10 @@ async def get_document(doc_id: str, user: CurrentUser = Depends(get_current_user
 
 
 @router.patch("/{doc_id}")
-async def update_document(doc_id: str, body: DocUpdateRequest, user: CurrentUser = Depends(require_admin)):
+async def update_document(doc_id: str, body: DocUpdateRequest):
     """Update cleaned content or metadata (editor saves)."""
-    create_version_snapshot("document", doc_id, user.username, "update")
-    log_audit("document", doc_id, "update", user.username)
+    create_version_snapshot("document", doc_id, "system", "update")
+    log_audit("document", doc_id, "update", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -163,10 +162,10 @@ async def update_document(doc_id: str, body: DocUpdateRequest, user: CurrentUser
 
 
 @router.patch("/{doc_id}/approve")
-async def approve_document(doc_id: str, user: CurrentUser = Depends(require_admin)):
+async def approve_document(doc_id: str):
     """Approve document: dispatch async task for embedding + indexing."""
-    create_version_snapshot("document", doc_id, user.username, "approve")
-    log_audit("document", doc_id, "approve", user.username)
+    create_version_snapshot("document", doc_id, "system", "approve")
+    log_audit("document", doc_id, "approve", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -195,10 +194,10 @@ async def approve_document(doc_id: str, user: CurrentUser = Depends(require_admi
 
 
 @router.patch("/{doc_id}/reject")
-async def reject_document(doc_id: str, user: CurrentUser = Depends(require_admin)):
+async def reject_document(doc_id: str):
     """Reject document: set status to 已驳回."""
-    create_version_snapshot("document", doc_id, user.username, "reject")
-    log_audit("document", doc_id, "reject", user.username)
+    create_version_snapshot("document", doc_id, "system", "reject")
+    log_audit("document", doc_id, "reject", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -227,7 +226,7 @@ async def reject_document(doc_id: str, user: CurrentUser = Depends(require_admin
 
 
 @router.post("/{doc_id}/reclean")
-async def reclean_document(doc_id: str, user: CurrentUser = Depends(require_admin)):
+async def reclean_document(doc_id: str):
     """Re-trigger async parsing for a document."""
     conn = get_connection()
     try:
@@ -257,10 +256,10 @@ async def reclean_document(doc_id: str, user: CurrentUser = Depends(require_admi
 
 
 @router.delete("/{doc_id}")
-async def delete_document(doc_id: str, user: CurrentUser = Depends(require_admin)):
+async def delete_document(doc_id: str):
     """Delete document and remove its chunks from ChromaDB."""
-    create_version_snapshot("document", doc_id, user.username, "delete")
-    log_audit("document", doc_id, "delete", user.username)
+    create_version_snapshot("document", doc_id, "system", "delete")
+    log_audit("document", doc_id, "delete", "system")
     conn = get_connection()
     try:
         row = conn.execute(

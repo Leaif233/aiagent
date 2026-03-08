@@ -7,7 +7,6 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from db.sqlite_db import get_connection
 from db.chroma_client import get_tickets_collection
 from db.versioning import create_version_snapshot, log_audit
-from core.auth import get_current_user, require_admin, CurrentUser
 from db.fingerprint_store import delete_fingerprints_by_entity
 from tasks.ticket_tasks import clean_ticket_task, approve_ticket_task
 from models.schemas import BatchRequest, TicketUpdateRequest
@@ -16,7 +15,7 @@ router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
 
 @router.post("/import")
-async def import_tickets(file: UploadFile = File(...), user: CurrentUser = Depends(require_admin)):
+async def import_tickets(file: UploadFile = File(...)):
     """Batch import tickets from Excel or JSON file."""
     content = await file.read()
     filename = file.filename or "unknown"
@@ -85,7 +84,7 @@ async def import_tickets(file: UploadFile = File(...), user: CurrentUser = Depen
 
 
 @router.get("")
-async def list_tickets(status: str = None, search: str = None, page: int = 1, page_size: int = 20, user: CurrentUser = Depends(get_current_user)):
+async def list_tickets(status: str = None, search: str = None, page: int = 1, page_size: int = 20):
     """List tickets with optional status filter, search, and pagination."""
     conn = get_connection()
     try:
@@ -120,7 +119,7 @@ async def list_tickets(status: str = None, search: str = None, page: int = 1, pa
 
 
 @router.post("/batch")
-async def batch_tickets(body: BatchRequest, user: CurrentUser = Depends(require_admin)):
+async def batch_tickets(body: BatchRequest):
     """Batch approve/reject/delete tickets."""
     if body.action not in ("approve", "reject", "delete") or not body.ids:
         raise HTTPException(status_code=400, detail="Invalid action or empty ids")
@@ -130,11 +129,11 @@ async def batch_tickets(body: BatchRequest, user: CurrentUser = Depends(require_
     for ticket_id in body.ids:
         try:
             if body.action == "approve":
-                await approve_ticket(ticket_id, user)
+                await approve_ticket(ticket_id)
             elif body.action == "reject":
-                await reject_ticket(ticket_id, user)
+                await reject_ticket(ticket_id)
             elif body.action == "delete":
-                await delete_ticket(ticket_id, user)
+                await delete_ticket(ticket_id)
             success += 1
         except Exception:
             failed += 1
@@ -143,7 +142,7 @@ async def batch_tickets(body: BatchRequest, user: CurrentUser = Depends(require_
 
 
 @router.get("/{ticket_id}")
-async def get_ticket(ticket_id: str, user: CurrentUser = Depends(get_current_user)):
+async def get_ticket(ticket_id: str):
     """Get single ticket detail including raw and extracted fields."""
     conn = get_connection()
     try:
@@ -158,10 +157,10 @@ async def get_ticket(ticket_id: str, user: CurrentUser = Depends(get_current_use
 
 
 @router.patch("/{ticket_id}")
-async def update_ticket(ticket_id: str, body: TicketUpdateRequest, user: CurrentUser = Depends(require_admin)):
+async def update_ticket(ticket_id: str, body: TicketUpdateRequest):
     """Update extracted fields (editor saves)."""
-    create_version_snapshot("ticket", ticket_id, user.username, "update")
-    log_audit("ticket", ticket_id, "update", user.username)
+    create_version_snapshot("ticket", ticket_id, "system", "update")
+    log_audit("ticket", ticket_id, "update", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -191,10 +190,10 @@ async def update_ticket(ticket_id: str, body: TicketUpdateRequest, user: Current
 
 
 @router.patch("/{ticket_id}/approve")
-async def approve_ticket(ticket_id: str, user: CurrentUser = Depends(require_admin)):
+async def approve_ticket(ticket_id: str):
     """Approve ticket: dispatch async task for embedding + indexing."""
-    create_version_snapshot("ticket", ticket_id, user.username, "approve")
-    log_audit("ticket", ticket_id, "approve", user.username)
+    create_version_snapshot("ticket", ticket_id, "system", "approve")
+    log_audit("ticket", ticket_id, "approve", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -220,10 +219,10 @@ async def approve_ticket(ticket_id: str, user: CurrentUser = Depends(require_adm
 
 
 @router.patch("/{ticket_id}/reject")
-async def reject_ticket(ticket_id: str, user: CurrentUser = Depends(require_admin)):
+async def reject_ticket(ticket_id: str):
     """Reject ticket: set status to 已驳回."""
-    create_version_snapshot("ticket", ticket_id, user.username, "reject")
-    log_audit("ticket", ticket_id, "reject", user.username)
+    create_version_snapshot("ticket", ticket_id, "system", "reject")
+    log_audit("ticket", ticket_id, "reject", "system")
     conn = get_connection()
     try:
         row = conn.execute(
@@ -253,7 +252,7 @@ async def reject_ticket(ticket_id: str, user: CurrentUser = Depends(require_admi
 
 
 @router.post("/{ticket_id}/reclean")
-async def reclean_ticket(ticket_id: str, user: CurrentUser = Depends(require_admin)):
+async def reclean_ticket(ticket_id: str):
     """Re-trigger LLM extraction for a ticket."""
     conn = get_connection()
     try:
@@ -277,10 +276,10 @@ async def reclean_ticket(ticket_id: str, user: CurrentUser = Depends(require_adm
 
 
 @router.delete("/{ticket_id}")
-async def delete_ticket(ticket_id: str, user: CurrentUser = Depends(require_admin)):
+async def delete_ticket(ticket_id: str):
     """Delete ticket and remove from ChromaDB."""
-    create_version_snapshot("ticket", ticket_id, user.username, "delete")
-    log_audit("ticket", ticket_id, "delete", user.username)
+    create_version_snapshot("ticket", ticket_id, "system", "delete")
+    log_audit("ticket", ticket_id, "delete", "system")
     conn = get_connection()
     try:
         row = conn.execute(
